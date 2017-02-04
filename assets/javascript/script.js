@@ -14,76 +14,72 @@ var database = firebase.database();
 
 var trainName = "";
 var destination = "";
-var firstTrainTime = "";
-var frequency = 0;
+var nextArrival = "";
+var minutesAway = "";
 
 
 // FUNCTIONS + EVENTS
 $("#addTrain").on("click", function() {
 
-  trainName = $('#nameInput').val().trim();
-  destination = $('#destinationInput').val().trim();
-  firstTrainTime = $('#firstTrainInput').val().trim();
-  frequency = $('#frequencyInput').val().trim();
+    trainName = $("#trainName").val().trim();
+    destination = $("#destination").val().trim();
+    nextArrival = $("#nextArrival").val().trim();
+    minutesAway = $("#minutesAway").val().trim();
 
-  console.log(trainName);
-  console.log(destination);
-  console.log(firstTrainTime);
-  console.log(frequency);
-
-  database.ref().push({
-    trainName: trainName,
-    destination: destination,
-    firstTrainTime: firstTrainTime,
-    frequency: frequency
-  });
-
-    return false;
-});
+     database.ref().push({
+          trainName: trainName,
+          destination: destination,
+          nextArrival: nextArrival,
+          minutesAway: minutesAway,
+          dateAdded: firebase.database.ServerValue.TIMESTAMP
+      });
 
 
 // MAIN PROCESS + INITIAL CODE
 database.ref().on("child_added", function(snapshot) {
-  console.log(snapshot.val());
+    console.log(childSnapshot.val().trainName);
+    console.log(childSnapshot.val().destination);
+    console.log(childSnapshot.val().nextArrival);
+    console.log(childSnapshot.val().minutesAway);
 
   // update the variable with data from the database
   trainName = snapshot.val().trainName;
   destination = snapshot.val().destination;
-  firstTrainTime = snapshot.val().firstTrainTime;
-  frequency = snapshot.val().frequency;
+  nextArrival = snapshot.val().nextArrival;
+  minutesAway = snapshot.val().minutesAway;
 
 
-  // moment.js methods for time calls and calculations. lines 57 to 65 were accomplished with Tenor's assistance. I didn't update the current time. It looks like "Minutes Away" may be larger than the frequency interval :(
-  var firstTrainMoment = moment(firstTrainTime, 'HH:mm');
-  var nowMoment = moment(); // creates a moment object of current date and time and storing it in a variable whenever the user click the submit button
+ // Capture Button Click
+     $("#runSearch").on("click", function(event) {
+// don't refresh the page
+      event.preventDefault();
+// Replaces the content in the "currentTrainSchedule" div
+      $("#currentTrainSchedule").empty();
 
-  var minutesSinceFirstArrival = nowMoment.diff(firstTrainMoment, 'minutes');
-  var minutesSinceLastArrival = minutesSinceFirstArrival % frequency;
-  var minutesAway = frequency - minutesSinceLastArrival;
+// Output all of the new information into the Current Train Schedule section
+      $("#currentTrainSchedule").append("<h1>" + trainName);
+      $("#currentTrainSchedule").append("<h4>" + destination);
+      $("#currentTrainSchedule").append("<h4>" + nextArrival);
+      $("#currentTrainSchedule").append("<h4>" + minutesAway);
 
-  var nextArrival = nowMoment.add(minutesAway, 'minutes');
-  var formatNextArrival = nextArrival.format("HH:mm");
+// Clear sessionStorage
+      sessionStorage.clear();
+
+// Store all content into sessionStorage
+      sessionStorage.setItem("trainName", trainName);
+      sessionStorage.setItem("destination", destination);
+      sessionStorage.setItem("nextArrival", nextArrival);
+      sessionStorage.setItem("minutesAway", minutesAway);
+        });
+
+  // By default display the content from sessionStorage
+      $("#currentTrainSchedule").empty();
+      $("#currentTrainSchedule").append("<h2>" + sessionStorage.getItem("trainName"));
+      $("#currentTrainSchedule").append("<h4>" + sessionStorage.getItem("destination"));
+      $("#currentTrainSchedule").append("<h4>" + sessionStorage.getItem("nextArrival"));
+      $("#currentTrainSchedule").append("<h4>" + sessionStorage.getItem("minutesAway"));
 
 
-  // add table
-  var tr = $('<tr>');
-  var a = $('<td>');
-  var b = $('<td>');
-  var c = $('<td>');
-  var d = $('<td>');
-  var e = $('<td>');
-  a.append(trainName);
-  b.append(destination);
-  c.append(frequency);
-  d.append(formatNextArrival);
-  e.append(minutesAway);
-  tr.append(a).append(b).append(c).append(d).append(e);
-  $('#newTrains').append(tr);
+////////
 
 
-  }, function (errorObject) {
-
-  // In case of error this will print the error
-    console.log("The read failed: " + errorObject.code);
-
-});
